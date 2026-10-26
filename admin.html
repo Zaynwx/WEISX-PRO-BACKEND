@@ -37,7 +37,7 @@
     border-bottom: 1px solid var(--borda); background: var(--caixa); position: sticky; top: 0; z-index: 5; }
   header div { display: flex; gap: 8px; }
   main { max-width: 1200px; margin: 0 auto; padding: 20px 16px 40px; }
-  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
   .card { background: var(--caixa); border: 1px solid var(--borda); border-radius: 10px; padding: 16px; }
   .card small { color: var(--fraco); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
   .card b { display: block; font-size: 28px; margin-top: 6px; }
@@ -67,6 +67,21 @@
   .novo-cupom { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 14px;
     background: var(--caixa); border: 1px solid var(--borda); border-radius: 10px; padding: 16px; }
   .novo-cupom label { font-size: 12px; color: var(--fraco); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+  .abas button .n { display: inline-block; min-width: 18px; padding: 1px 6px; margin-left: 6px; border-radius: 9px; background: var(--vermelho); color: #fff; font-size: 11px; }
+  .msgs { display: grid; gap: 10px; }
+  .msg-item { background: var(--caixa); border: 1px solid var(--borda); border-radius: 10px; padding: 14px 16px; }
+  .msg-item.nova { border-left: 3px solid var(--vermelho); }
+  .msg-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .msg-top b { font-size: 15px; }
+  .msg-top .quem { color: var(--fraco); font-size: 13px; user-select: all; }
+  .msg-top .quando { margin-left: auto; color: var(--fraco); font-size: 12px; }
+  .msg-texto { white-space: pre-wrap; word-break: break-word; line-height: 1.5; font-size: 14px; }
+  .msg-acoes { display: flex; gap: 6px; margin-top: 10px; }
+  .tipo { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+  .tipo.sugestao { background: rgba(61,220,132,.12); color: var(--verde); }
+  .tipo.bug { background: rgba(225,6,0,.15); color: #ff4a42; }
+  .tipo.duvida { background: rgba(245,197,66,.12); color: var(--amarelo); }
+  .tipo.outro { background: #1d1d1d; color: var(--fraco); }
   #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1b1b1b; border: 1px solid var(--borda);
     padding: 12px 18px; border-radius: 8px; font-size: 14px; opacity: 0; pointer-events: none; transition: .2s; z-index: 10; }
   #toast.show { opacity: 1; }
@@ -75,6 +90,7 @@
 
   @media (max-width: 700px) {
     .cards { grid-template-columns: repeat(2, 1fr); }
+    .cards .card:last-child { grid-column: 1 / -1; }
     .novo-cupom { grid-template-columns: 1fr 1fr; }
     .novo-cupom div:first-child { grid-column: 1 / -1; }
     header { padding: 12px 16px; }
@@ -111,11 +127,13 @@
       <div class="card"><small>Acesso ativo</small><b id="cAtivos">0</b></div>
       <div class="card on"><small>Online agora</small><b id="cOnline">0</b></div>
       <div class="card"><small>Faturado</small><b id="cFat">R$ 0,00</b></div>
+      <div class="card"><small>Mensagens novas</small><b id="cMsgs">0</b></div>
     </section>
 
     <nav class="abas">
       <button data-aba="abaContas" class="ativa">Contas</button>
       <button data-aba="abaCupons">Cupons</button>
+      <button data-aba="abaMsgs">Mensagens<span class="n" id="nMsgs" hidden>0</span></button>
     </nav>
 
     <!-- CONTAS -->
@@ -153,6 +171,20 @@
         </table>
       </div>
     </section>
+    <!-- MENSAGENS -->
+    <section id="abaMsgs" hidden>
+      <div class="barra">
+        <select id="filtroMsg">
+          <option value="todas">Todas</option>
+          <option value="novas">Só as não lidas</option>
+          <option value="sugestao">Ideias de melhoria</option>
+          <option value="bug">Problemas</option>
+          <option value="duvida">Dúvidas</option>
+          <option value="outro">Outros</option>
+        </select>
+      </div>
+      <div class="msgs" id="listaMsgs"></div>
+    </section>
   </main>
 </div>
 
@@ -164,6 +196,7 @@
   try { token = localStorage.getItem('weisx_adm'); } catch {}
   let usuarios = [];
   let cupons = [];
+  let mensagens = [];
   let timer = null;
 
   // ---------- utilidades ----------
@@ -234,15 +267,20 @@
 
   async function carregar() {
     try {
-      const [r, u, c] = await Promise.all([api('/admin/resumo'), api('/admin/usuarios'), api('/admin/cupons')]);
+      const [r, u, c, m] = await Promise.all([api('/admin/resumo'), api('/admin/usuarios'), api('/admin/cupons'), api('/admin/mensagens')]);
       $('cTotal').textContent = r.total;
       $('cAtivos').textContent = r.ativos;
       $('cOnline').textContent = r.online;
       $('cFat').textContent = reais(r.faturamento);
+      $('cMsgs').textContent = r.mensagensNovas || 0;
+      $('nMsgs').textContent = r.mensagensNovas || 0;
+      $('nMsgs').hidden = !r.mensagensNovas;
       usuarios = u.usuarios;
       cupons = c.cupons;
+      mensagens = m.mensagens;
       mostrarContas();
       mostrarCupons();
+      mostrarMsgs();
     } catch (e) {
       if (token) toast(e.message, true);
     }
@@ -253,8 +291,7 @@
   document.querySelectorAll('.abas button').forEach(b => {
     b.onclick = () => {
       document.querySelectorAll('.abas button').forEach(x => x.classList.toggle('ativa', x === b));
-      $('abaContas').hidden = b.dataset.aba !== 'abaContas';
-      $('abaCupons').hidden = b.dataset.aba !== 'abaCupons';
+      ['abaContas', 'abaCupons', 'abaMsgs'].forEach(id => $(id).hidden = b.dataset.aba !== id);
     };
   });
 
@@ -351,6 +388,46 @@
       } else {
         if (!confirm('Excluir esse cupom?')) return;
         await api('/admin/cupons/' + id, { method: 'DELETE' });
+      }
+      carregar();
+    } catch (err) { toast(err.message, true); }
+  };
+
+  // ---------- mensagens ----------
+  const NOMES_TIPO = { sugestao: 'Ideia de melhoria', bug: 'Problema', duvida: 'Dúvida', outro: 'Outro' };
+  function mostrarMsgs() {
+    const f = $('filtroMsg').value;
+    const lista = mensagens.filter(m => f === 'todas' || (f === 'novas' ? !m.lida : m.tipo === f));
+    if (!lista.length) {
+      $('listaMsgs').innerHTML = '<div class="vazio">Nenhuma mensagem aqui ainda.</div>';
+      return;
+    }
+    $('listaMsgs').innerHTML = lista.map(m => `
+      <div class="msg-item ${m.lida ? '' : 'nova'}" data-id="${esc(m.id)}">
+        <div class="msg-top">
+          <span class="tipo ${esc(m.tipo)}">${esc(NOMES_TIPO[m.tipo] || m.tipo)}</span>
+          <b>${esc(m.nome)}</b>
+          <span class="quem">${esc(m.contato)}</span>
+          <span class="quando">${new Date(m.criadoEm).toLocaleString('pt-BR')}</span>
+        </div>
+        <div class="msg-texto">${esc(m.texto)}</div>
+        <div class="msg-acoes">
+          <button class="btn sec mini" data-acao="lida" data-lida="${m.lida}">${m.lida ? 'Marcar como nova' : 'Marcar como lida'}</button>
+          <button class="btn sec mini" data-acao="excluir">Excluir</button>
+        </div>
+      </div>`).join('');
+  }
+  $('filtroMsg').onchange = mostrarMsgs;
+  $('listaMsgs').onclick = async e => {
+    const b = e.target.closest('button[data-acao]');
+    if (!b) return;
+    const id = b.closest('.msg-item').dataset.id;
+    try {
+      if (b.dataset.acao === 'lida') {
+        await api('/admin/mensagens/' + id, { method: 'PATCH', body: { lida: b.dataset.lida !== 'true' } });
+      } else {
+        if (!confirm('Excluir essa mensagem?')) return;
+        await api('/admin/mensagens/' + id, { method: 'DELETE' });
       }
       carregar();
     } catch (err) { toast(err.message, true); }

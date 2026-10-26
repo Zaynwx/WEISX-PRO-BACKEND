@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WEISX PRO</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="WEISX PRO: Instant Build e Item Pullout para Fortnite. Planos de 1, 15 e 30 dias com PIX.">
+<link rel="icon" href="weisx.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@600;700&display=swap">
+<style>
+  /* Layout: hero com o dragão e teclas flutuando, depois faixas empilhadas (recursos, planos, segurança, passos, contato) */
+  :root {
+    --bg: #090507;
+    --bg-2: #120a0d;
+    --panel: rgba(24, 12, 16, .72);
+    --line: rgba(255, 220, 225, .09);
+    --line-2: rgba(255, 220, 225, .16);
+    --fg: #f5eef0;
+    --muted: #a8989c;
+    --dim: #6f5f63;
+    --accent: #ef3b3b;
+    --accent-2: #ff7a5c;
+    --accent-rgb: 239, 59, 59;
+    --ok: #3ddc84;
+    --display: "Chakra Petch", "Bahnschrift", "Segoe UI", sans-serif;
+    --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", Consolas, monospace;
+    --ease: cubic-bezier(.2, .8, .2, 1);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.6 var(--body); overflow-x: hidden;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+    z-index: 10; background: rgba(9, 5, 7, .85);
+  }
+  #fundo { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+  .faixa { position: relative; z-index: 1; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .miolo { max-width: 1080px; margin: 0 auto; }
+  h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; letter-spacing: .02em; }
+  p { margin: 0; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent-2); outline-offset: 3px; border-radius: 6px; }
+
+  /* ---------- topo ---------- */
+  .topo {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 9;
+    background: rgba(9, 5, 7, .72); backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topo .miolo { display: flex; align-items: center; gap: 24px; height: 64px; }
+  .marca { display: flex; align-items: center; gap: 10px; text-decoration: none; font: 700 18px var(--display); letter-spacing: .18em; }
+  .marca img { width: 34px; height: 34px; border-radius: 9px; box-shadow: 0 0 0 1px rgba(var(--accent-rgb), .5), 0 0 16px rgba(var(--accent-rgb), .4); }
+  .marca b { color: var(--accent); font-weight: 700; }
+  .menu { display: flex; gap: 22px; margin-left: auto; }
+  .menu a { text-decoration: none; font: 600 13px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); transition: color .2s; }
+  .menu a:hover { color: var(--fg); }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    height: 46px; padding: 0 24px; border-radius: 12px; border: 1px solid transparent;
+    font: 700 14px var(--display); letter-spacing: .16em; text-transform: uppercase; text-decoration: none;
+    cursor: pointer; position: relative; overflow: hidden; transition: transform .2s var(--ease), box-shadow .25s, background .25s, border-color .25s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-cheio { background: linear-gradient(135deg, var(--accent), #b3122b); color: #fff; box-shadow: 0 10px 30px rgba(var(--accent-rgb), .35), inset 0 1px 0 rgba(255, 255, 255, .25); }
+  .btn-cheio::after { content: ""; position: absolute; inset: 0 auto 0 -60%; width: 40%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .35), transparent); transform: skewX(-20deg); transition: left .7s var(--ease); }
+  .btn-cheio:hover { box-shadow: 0 14px 40px rgba(var(--accent-rgb), .55); }
+  .btn-cheio:hover::after { left: 130%; }
+  .btn-linha { border-color: var(--line-2); color: var(--fg); background: rgba(255, 255, 255, .03); }
+  .btn-linha:hover { border-color: rgba(var(--accent-rgb), .7); background: rgba(var(--accent-rgb), .08); }
+  .topo .btn { height: 38px; padding: 0 16px; font-size: 12px; }
+
+  /* ---------- hero ---------- */
+  .hero .miolo { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; padding-block: 72px 56px; }
+  .selo { display: inline-flex; align-items: center; gap: 8px; font: 600 12px var(--mono); letter-spacing: .08em; color: var(--accent-2); padding: 6px 12px; border: 1px solid rgba(var(--accent-rgb), .4); border-radius: 999px; background: rgba(var(--accent-rgb), .08); }
+  .selo i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 10px var(--ok); animation: pisca 1.6s infinite; }
+  @keyframes pisca { 50% { opacity: .3; } }
+  .hero h1 { font-size: clamp(48px, 9vw, 96px); line-height: .92; font-weight: 700; letter-spacing: .04em; margin-top: 22px; }
+  .hero h1 span { display: block; color: transparent; -webkit-text-stroke: 1.5px var(--accent); text-shadow: 0 0 40px rgba(var(--accent-rgb), .35); }
+  .hero p.lead { font-size: 19px; color: var(--muted); max-width: 30em; margin-top: 20px; }
+  .hero p.lead b { color: var(--fg); font-weight: 600; }
+  .acoes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+  .preco-de { margin-top: 18px; font: 500 13px var(--mono); color: var(--dim); }
+  .preco-de b { color: var(--fg); }
+
+  .palco { position: relative; aspect-ratio: 1; max-width: 420px; width: 100%; margin: 0 auto; }
+  .palco .anel { position: absolute; inset: 6%; border-radius: 50%; border: 1px dashed rgba(var(--accent-rgb), .35); animation: girar 40s linear infinite; }
+  .palco .anel.b { inset: 18%; border-style: solid; border-color: rgba(var(--accent-rgb), .18); animation-duration: 26s; animation-direction: reverse; }
+  .palco .anel::before { content: ""; position: absolute; top: -4px; left: 50%; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px var(--accent); }
+  @keyframes girar { to { transform: rotate(360deg); } }
+  .palco img.dragao {
+    position: absolute; inset: 27%; width: 46%; height: 46%; border-radius: 28px;
+    box-shadow: 0 0 0 1px rgba(var(--accent-rgb), .6), 0 20px 60px rgba(0, 0, 0, .6), 0 0 80px rgba(var(--accent-rgb), .45);
+    animation: flutuar 5s ease-in-out infinite;
+  }
+  @keyframes flutuar { 50% { transform: translateY(-10px); } }
+  .tecla {
+    position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 8px 12px; border-radius: 10px; background: rgba(18, 10, 13, .85); border: 1px solid var(--line-2);
+    box-shadow: 0 4px 0 rgba(0, 0, 0, .5), 0 10px 24px rgba(0, 0, 0, .4); backdrop-filter: blur(8px);
+    animation: flutuar 6s ease-in-out infinite;
+  }
+  .tecla kbd { font: 700 13px var(--mono); color: var(--fg); }
+  .tecla small { font: 600 10px var(--display); letter-spacing: .14em; color: var(--accent-2); text-transform: uppercase; }
+  .tecla.t1 { top: 4%; left: 2%; animation-delay: -1s; }
+  .tecla.t2 { top: 12%; right: 0; animation-delay: -3s; }
+  .tecla.t3 { bottom: 10%; left: 0; animation-delay: -2s; }
+  .tecla.t4 { bottom: 2%; right: 8%; animation-delay: -4s; }
+
+  /* ---------- seções ---------- */
+  section.faixa { padding-block: 72px; }
+  .cab { display: flex; flex-direction: column; gap: 10px; margin-bottom: 36px; max-width: 640px; }
+  .cab small { font: 600 12px var(--mono); letter-spacing: .14em; color: var(--accent-2); text-transform: uppercase; }
+  .cab h2 { font-size: clamp(30px, 5vw, 44px); line-height: 1.05; }
+  .cab p { color: var(--muted); }
+  .revelar { transition: opacity .7s var(--ease), transform .7s var(--ease); }
+  .js .revelar.oculto { opacity: 0; transform: translateY(24px); }
+
+  .recursos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .rec {
+    position: relative; padding: 24px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line);
+    backdrop-filter: blur(10px); transition: transform .3s var(--ease), border-color .3s; min-width: 0;
+  }
+  .rec:hover { transform: translateY(-4px); border-color: rgba(var(--accent-rgb), .5); }
+  .rec .ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: rgba(var(--accent-rgb), .12); color: var(--accent-2); margin-bottom: 16px; }
+  .rec h3 { font-size: 20px; }
+  .rec p { color: var(--muted); font-size: 15px; margin-top: 6px; }
+  .rec .binds { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .rec .binds kbd { font: 700 11px var(--mono); padding: 3px 8px; border-radius: 6px; border: 1px solid var(--line-2); background: rgba(0, 0, 0, .35); }
+
+  /* ---------- planos ---------- */
+  .planos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: stretch; }
+  .plano {
+    position: relative; display: flex; flex-direction: column; padding: 28px 24px 24px; border-radius: 18px;
+    background: var(--panel); border: 1px solid var(--line-2); backdrop-filter: blur(10px);
+    transition: transform .35s var(--ease), border-color .3s, box-shadow .3s;
+  }
+  .plano:hover { transform: translateY(-6px); border-color: rgba(var(--accent-rgb), .7); box-shadow: 0 20px 50px rgba(var(--accent-rgb), .18); }
+  .plano.top { border-color: rgba(var(--accent-rgb), .8); background: linear-gradient(180deg, rgba(var(--accent-rgb), .18), var(--panel) 55%); box-shadow: 0 0 40px rgba(var(--accent-rgb), .2); }
+  .plano .tag { position: absolute; top: -12px; left: 24px; font: 700 11px var(--display); letter-spacing: .16em; padding: 4px 10px; border-radius: 6px; background: var(--accent); color: #fff; box-shadow: 0 0 18px rgba(var(--accent-rgb), .6); }
+  .plano small { font: 600 12px var(--mono); letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+  .plano h3 { font-size: 40px; line-height: 1; margin-top: 8px; }
+  .plano .valor { font: 700 44px var(--display); margin-top: 18px; color: var(--fg); font-variant-numeric: tabular-nums; }
+  .plano .valor sup { font-size: 18px; color: var(--muted); margin-right: 4px; vertical-align: 18px; }
+  .plano .dia { font: 600 13px var(--mono); color: var(--accent-2); min-height: 20px; }
+  .plano ul { list-style: none; padding: 0; margin: 20px 0 24px; display: grid; gap: 8px; color: var(--muted); font-size: 15px; }
+  .plano li { display: flex; gap: 10px; align-items: baseline; }
+  .plano li::before { content: ""; flex: none; width: 8px; height: 8px; transform: rotate(45deg) translateY(-1px); background: var(--accent); border-radius: 2px; }
+  .plano .btn { margin-top: auto; width: 100%; }
+  .nota { margin-top: 18px; color: var(--dim); font-size: 14px; text-align: center; }
+  .nota b { color: var(--muted); }
+
+  /* ---------- segurança ---------- */
+  .seguro { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+  .checks { display: grid; gap: 12px; }
+  .check { display: grid; grid-template-columns: 40px 1fr; gap: 14px; padding: 18px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); min-width: 0; }
+  .check .ic { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(61, 220, 132, .12); color: var(--ok); }
+  .check b { font-family: var(--display); font-size: 17px; letter-spacing: .02em; }
+  .check p { color: var(--muted); font-size: 14.5px; margin-top: 2px; }
+  .aviso { margin-top: 16px; font-size: 13px; color: var(--dim); }
+
+  /* ---------- passos ---------- */
+  .passos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; counter-reset: passo; }
+  .passo { position: relative; padding: 24px; border-top: 2px solid rgba(var(--accent-rgb), .5); min-width: 0; }
+  .passo::before { counter-increment: passo; content: "0" counter(passo); font: 700 40px var(--display); color: transparent; -webkit-text-stroke: 1px rgba(var(--accent-rgb), .7); display: block; margin-bottom: 8px; }
+  .passo h3 { font-size: 20px; }
+  .passo p { color: var(--muted); font-size: 15px; margin-top: 6px; }
+
+  /* ---------- contato ---------- */
+  .contato { display: grid; grid-template-columns: .8fr 1.2fr; gap: 40px; align-items: start; }
+  form { display: grid; gap: 14px; padding: 28px; border-radius: 18px; background: var(--panel); border: 1px solid var(--line-2); backdrop-filter: blur(10px); min-width: 0; }
+  .duas { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  label { display: grid; gap: 6px; font: 600 12px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); min-width: 0; }
+  input, select, textarea {
+    width: 100%; font: 500 15px var(--body); color: var(--fg); background: rgba(0, 0, 0, .35);
+    border: 1px solid var(--line-2); border-radius: 10px; padding: 12px 14px; outline: none; transition: border-color .2s, box-shadow .2s;
+  }
+  textarea { min-height: 130px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { border-color: rgba(var(--accent-rgb), .8); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .18); }
+  select option { background: var(--bg-2); }
+  .pote { position: absolute; left: -9999px; }
+  .tipos { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tipos input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .tipos label { cursor: pointer; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line-2); font-size: 11px; color: var(--muted); transition: .2s; }
+  .tipos input:checked + span { color: #fff; }
+  .tipos label:has(input:checked) { border-color: var(--accent); background: rgba(var(--accent-rgb), .15); color: #fff; }
+  .tipos label:has(input:focus-visible) { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+  .status { min-height: 22px; font-size: 14px; }
+  .status.ok { color: var(--ok); }
+  .status.erro { color: #ff6b63; }
+
+  /* ---------- rodapé ---------- */
+  footer.faixa { padding-block: 32px 40px; border-top: 1px solid var(--line); }
+  footer .miolo { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; color: var(--dim); font-size: 14px; }
+  footer .fundado { font: 600 13px var(--display); letter-spacing: .16em; text-transform: uppercase; }
+  footer .fundado a { color: var(--fg); text-decoration: none; }
+  footer .fundado a b { color: var(--accent); }
+  footer .fundado a:hover { text-decoration: underline; text-decoration-color: var(--accent); }
+
+  @media (max-width: 860px) {
+    .menu { display: none; }
+    .hero .miolo { grid-template-columns: 1fr; padding-block: 40px; }
+    .palco { max-width: 320px; order: -1; }
+    .recursos, .planos, .passos { grid-template-columns: 1fr; }
+    .seguro, .contato { grid-template-columns: 1fr; }
+    .planos { gap: 26px; }
+  }
+  @media (max-width: 480px) {
+    .duas { grid-template-columns: 1fr; }
+    .topo .btn { display: none; }
+    .acoes .btn { flex: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .js .revelar.oculto { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="fundo"></canvas>
+
+<header class="topo faixa">
+  <div class="miolo">
+    <a class="marca" href="#inicio"><img src="weisx.png" alt="">WEISX <b>PRO</b></a>
+    <nav class="menu">
+      <a href="#recursos">Recursos</a>
+      <a href="#planos">Planos</a>
+      <a href="#seguranca">Segurança</a>
+      <a href="#contato">Contato</a>
+    </nav>
+    <a class="btn btn-cheio" href="download">Baixar</a>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <div class="faixa hero" id="inicio">
+    <div class="miolo">
+      <div>
+        <span class="selo"><i></i>v1.1 · Windows 10 e 11</span>
+        <h1>WEISX<span>PRO</span></h1>
+        <p class="lead">Coloque parede, escada, piso e cone <b>no instante</b> em que aperta a tecla, e saque a doze <b>no momento</b> em que solta o tiro. Tudo configurável nas suas binds.</p>
+        <div class="acoes">
+          <a class="btn btn-cheio" href="download">
+            Baixar agora
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11 4h2v9.2l3.3-3.3 1.4 1.4L12 17l-5.7-5.7 1.4-1.4 3.3 3.3V4Zm-6 15h14v2H5v-2Z"/></svg>
+          </a>
+          <a class="btn btn-linha" href="#planos">Ver planos</a>
+        </div>
+        <p class="preco-de" id="precoDe">Planos a partir de <b>R$ 2/dia</b> · pagamento por PIX</p>
+      </div>
+      <div class="palco" aria-hidden="true">
+        <div class="anel"></div>
+        <div class="anel b"></div>
+        <img class="dragao" src="weisx.png" alt="">
+        <div class="tecla t1"><kbd>MOUSE5</kbd><small>Parede</small></div>
+        <div class="tecla t2"><kbd>MOUSE4</kbd><small>Escada</small></div>
+        <div class="tecla t3"><kbd>X</kbd><small>Piso</small></div>
+        <div class="tecla t4"><kbd>LSHIFT</kbd><small>Cone</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECURSOS -->
+  <section class="faixa" id="recursos">
+    <div class="miolo">
+      <div class="cab revelar">
+        <small>O que vem no app</small>
+        <h2>Feito pra quem joga no limite do tempo de reação</h2>
+      </div>
+      <div class="recursos">
+        <article class="rec revelar">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 3h8v8H3V3Zm10 0h8v8h-8V3ZM3 13h8v8H3v-8Zm10 0h8v8h-8v-8Z"/></svg></div>
+          <h3>Instant Build</h3>
+          <p>Apertou a tecla, a peça já está no lugar. Segurando, continua construindo. Liga e desliga cada peça separado.</p>
+          <div class="binds"><kbd>PAREDE</kbd><kbd>ESCADA</kbd><kbd>PISO</kbd><kbd>CONE</kbd></div>
+        </article>
+        <article class="rec revelar">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M2 9h14l3-3h3v4h-3l-2 2H9l-1 6H4l1-6H2V9Z"/></svg></div>
+          <h3>Item Pullout</h3>
+          <p>Enquanto o botão de tiro está pressionado, nada acontece. Soltou, a arma escolhida sai na mão.</p>
+          <div class="binds"><kbd>DOZE</kbd><kbd>PICARETA</kbd></div>
+        </article>
+        <article class="rec revelar">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v12H3V6Zm2 2v2h2V8H5Zm4 0v2h2V8H9Zm4 0v2h2V8h-2Zm4 0v2h2V8h-2ZM7 14v2h10v-2H7Z"/></svg></div>
+          <h3>Suas binds</h3>
+          <p>Clique e aperte qualquer tecla ou botão do mouse. Construção, edição, armas e utensílios, tudo do seu jeito.</p>
+          <div class="binds"><kbd>MOUSE1–5</kbd><kbd>A–Z</kbd><kbd>F1–F12</kbd><kbd>NUM</kbd></div>
+        </article>
+        <article class="rec revelar">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A5.6 5.6 0 0 0 22 10c0-4.4-4.5-8-10-8ZM6.5 12a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm3-4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm3 4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"/></svg></div>
+          <h3>Visual do seu jeito</h3>
+          <p>Fundo animado que muda com a cor de destaque. Seis cores ou o modo RGB, que vai trocando sozinho.</p>
+        </article>
+        <article class="rec revelar">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a5 5 0 0 1 5 5v3h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h1V7a5 5 0 0 1 5-5Zm0 2a3 3 0 0 0-3 3v3h6V7a3 3 0 0 0-3-3Z"/></svg></div>
+          <h3>Login salvo</h3>
+          <p>Entra uma vez e pronto. Nas próximas, o app abre direto na sua conta, com foto de perfil e dias restantes.</p>
+        </article>
+        <article class="rec revelar">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></svg></div>
+          <h3>Leve no jogo</h3>
+          <p>A animação para quando você sai do app, e os macros pausam enquanto você mexe nele. Zero peso na partida.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLANOS -->
+  <section class="faixa" id="planos">
+    <div class="miolo">
+      <div class="cab revelar">
+        <small>Planos</small>
+        <h2>Escolha quanto tempo quer jogar</h2>
+        <p>Paga por PIX dentro do app e libera na hora. Se ainda tiver dias, os novos são somados.</p>
+      </div>
+      <div class="planos" id="listaPlanos"></div>
+      <p class="nota">Tem cupom? Use na tela de pagamento do app. <b>Primeiro baixe, crie sua conta e escolha o plano.</b></p>
+    </div>
+  </section>
+
+  <!-- SEGURANÇA -->
+  <section class="faixa" id="seguranca">
+    <div class="miolo seguro">
+      <div class="cab revelar">
+        <small>Segurança</small>
+        <h2>Funciona por fora do jogo</h2>
+        <p>O WEISX PRO trabalha como um teclado programável: ele só aperta as teclas e os botões que você configurou, no tempo certo.</p>
+        <p class="aviso">Nenhum programa externo pode garantir que um jogo nunca vai mudar suas regras. Use com responsabilidade e respeite as regras de cada torneio.</p>
+      </div>
+      <div class="checks">
+        <div class="check revelar">
+          <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m9.5 16.2-4.2-4.2-1.4 1.4 5.6 5.6L21 7.5l-1.4-1.4z"/></svg></div>
+          <div><b>Não mexe nos arquivos do Fortnite</b><p>Nada é instalado, alterado ou substituído na pasta do jogo.</p></div>
+        </div>
+        <div class="check revelar">
+          <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m9.5 16.2-4.2-4.2-1.4 1.4 5.6 5.6L21 7.5l-1.4-1.4z"/></svg></div>
+          <div><b>Não injeta código nem lê a memória do jogo</b><p>Ele não entra no processo do Fortnite. Só envia teclas e cliques, como um periférico.</p></div>
+        </div>
+        <div class="check revelar">
+          <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m9.5 16.2-4.2-4.2-1.4 1.4 5.6 5.6L21 7.5l-1.4-1.4z"/></svg></div>
+          <div><b>Você no controle</b><p>Um botão liga e desliga tudo. Cada função e cada peça tem sua própria chave.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PASSOS -->
+  <section class="faixa" id="como">
+    <div class="miolo">
+      <div class="cab revelar">
+        <small>Como começar</small>
+        <h2>Do download à primeira partida</h2>
+      </div>
+      <div class="passos">
+        <div class="passo revelar"><h3>Baixe e instale</h3><p>Um clique no instalador e o app abre sozinho. Sem ficar clicando em "Próximo".</p></div>
+        <div class="passo revelar"><h3>Crie a conta e pague</h3><p>Escolha 1, 15 ou 30 dias e pague o PIX. O acesso libera na mesma hora.</p></div>
+        <div class="passo revelar"><h3>Ajuste e jogue</h3><p>Coloque as mesmas binds que você usa no Fortnite, ative as funções e entre na partida.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTATO -->
+  <section class="faixa" id="contato">
+    <div class="miolo contato">
+      <div class="cab revelar">
+        <small>Contato</small>
+        <h2>Fale direto com quem faz o app</h2>
+        <p>Achou um problema, tem uma ideia de função nova ou quer tirar uma dúvida? Manda aqui. Toda mensagem chega no painel do WEISX e é lida.</p>
+      </div>
+      <form id="formContato" class="revelar" novalidate>
+        <div class="duas">
+          <label for="cNome">Seu nome ou nick<input id="cNome" name="nome" maxlength="40" required autocomplete="nickname" placeholder="zayn"></label>
+          <label for="cContato">Discord ou e-mail<input id="cContato" name="contato" maxlength="80" required placeholder="zayn#0001 ou voce@email.com"></label>
+        </div>
+        <div>
+          <label id="tiposRotulo">Assunto</label>
+          <div class="tipos" role="radiogroup" aria-labelledby="tiposRotulo">
+            <label><input type="radio" name="tipo" id="tSug" value="sugestao" checked><span>Ideia de melhoria</span></label>
+            <label><input type="radio" name="tipo" id="tBug" value="bug"><span>Achei um problema</span></label>
+            <label><input type="radio" name="tipo" id="tDuv" value="duvida"><span>Dúvida</span></label>
+            <label><input type="radio" name="tipo" id="tOut" value="outro"><span>Outro</span></label>
+          </div>
+        </div>
+        <label for="cTexto">Mensagem<textarea id="cTexto" name="texto" maxlength="1000" required placeholder="Ex.: seria massa ter uma opção de reset de edição no MOUSE3"></textarea></label>
+        <input class="pote" id="cSite" name="site" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button class="btn btn-cheio" type="submit" id="btnEnviar">Enviar mensagem</button>
+        <p class="status" id="status" role="status"></p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="faixa">
+  <div class="miolo">
+    <span class="fundado">Founded by <a href="https://zippy-douhua-4c4734.netlify.app/#inicio" target="_blank" rel="noopener"><b>WEISX</b> DESENVOLVEDORES</a></span>
+    <span>© 2026 WEISX PRO · Não é afiliado à Epic Games.</span>
+  </div>
+</footer>
+
+<script>
+  document.documentElement.classList.add('js');
+
+  /* ---------- fundo: grade em perspectiva, brilhos e faíscas ---------- */
+  (function () {
+    const cv = document.getElementById('fundo');
+    const ctx = cv.getContext('2d');
+    const parado = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let W, H;
+    const faiscas = Array.from({ length: 60 }, () => ({ x: Math.random(), y: Math.random(), v: .01 + Math.random() * .04, r: .5 + Math.random() * 1.5, a: .2 + Math.random() * .6 }));
+    function tamanho() {
+      const d = Math.min(devicePixelRatio || 1, 1.5);
+      W = innerWidth; H = innerHeight;
+      cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0);
+    }
+    const c = a => `rgba(239,59,59,${a})`;
+    let ult = performance.now();
+    function quadro(now) {
+      const t = now / 1000, dt = Math.min(.05, (now - ult) / 1000); ult = now;
+      ctx.fillStyle = '#090507'; ctx.fillRect(0, 0, W, H);
+      [[.15, .2, .55, .22], [.85, .35, .45, .16], [.5, 1, .7, .2]].forEach(([bx, by, r, a], i) => {
+        const x = W * (bx + .08 * Math.sin(t * .3 + i * 2)), y = H * (by + .06 * Math.cos(t * .25 + i));
+        const g = ctx.createRadialGradient(x, y, 0, x, y, Math.max(W, H) * r);
+        g.addColorStop(0, c(a)); g.addColorStop(1, c(0));
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      });
+      const hz = H * .58, cx = W / 2, of = (t * .25) % 1;
+      for (let i = 0; i < 14; i++) {
+        const p = (i + of) / 14, y = hz + (H - hz) * p * p;
+        ctx.strokeStyle = c(.03 + .14 * p); ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+      for (let i = -14; i <= 14; i++) {
+        const g = ctx.createLinearGradient(0, hz, 0, H); g.addColorStop(0, c(0)); g.addColorStop(1, c(.14));
+        ctx.strokeStyle = g; ctx.beginPath(); ctx.moveTo(cx + i * 8, hz); ctx.lineTo(cx + i * W / 6, H); ctx.stroke();
+      }
+      ctx.globalCompositeOperation = 'lighter';
+      for (const f of faiscas) {
+        f.y -= f.v * dt; if (f.y < -.02) { f.y = 1.02; f.x = Math.random(); }
+        ctx.fillStyle = c(f.a); ctx.beginPath(); ctx.arc(f.x * W, f.y * H, f.r, 0, 7); ctx.fill();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      const v = ctx.createRadialGradient(W / 2, H * .4, Math.min(W, H) * .2, W / 2, H / 2, Math.max(W, H) * .8);
+      v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.75)');
+      ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+      if (!parado && !document.hidden) requestAnimationFrame(quadro);
+    }
+    addEventListener('resize', () => { tamanho(); if (parado) quadro(performance.now()); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && !parado) requestAnimationFrame(quadro); });
+    tamanho(); requestAnimationFrame(quadro);
+  })();
+
+  /* ---------- aparecer ao rolar (começa visível; só esconde o que está abaixo da tela) ---------- */
+  (function () {
+    const itens = [...document.querySelectorAll('.revelar')];
+    if (!('IntersectionObserver' in window)) return;
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.remove('oculto'); io.unobserve(e.target); }
+    }), { threshold: .12 });
+    itens.forEach((el, i) => {
+      if (el.getBoundingClientRect().top > innerHeight) {
+        el.classList.add('oculto');
+        el.style.transitionDelay = (i % 3) * 80 + 'ms';
+        io.observe(el);
+      }
+    });
+  })();
+
+  /* ---------- planos ao vivo do servidor ---------- */
+  (async function () {
+    const PADRAO = [
+      { id: 'teste', nome: 'Teste 1 dia', dias: 1, preco: 10 },
+      { id: 'dias15', nome: '15 dias', dias: 15, preco: 30 },
+      { id: 'dias30', nome: '30 dias', dias: 30, preco: 60 },
+    ];
+    let planos = PADRAO;
+    try {
+      const r = await fetch('planos');
+      if (r.ok) { const d = await r.json(); if (d.planos && d.planos.length) planos = d.planos; }
+    } catch (e) {}
+
+    const reais = v => Number.isInteger(+v) ? String(v) : (+v).toFixed(2).replace('.', ',');
+    const centavos = v => (+v).toFixed(2).replace('.', ',');
+    const porDia = p => p.preco / p.dias;
+    const melhor = planos.reduce((a, p) => (!a || porDia(p) < porDia(a) ? p : a), null);
+    document.getElementById('precoDe').innerHTML = `Planos a partir de <b>R$ ${centavos(porDia(melhor))}/dia</b> · pagamento por PIX`;
+
+    const extras = {
+      teste: ['Acesso completo por 24 horas', 'Pra sentir a diferença na hora', 'Uma vez por conta'],
+      dias15: ['Instant Build e Item Pullout', 'Binds e cores personalizadas', 'Suporte pelo contato'],
+      dias30: ['Tudo do plano de 15 dias', 'Menor preço por dia', 'Ideal pra quem joga todo dia'],
+    };
+    const lista = document.getElementById('listaPlanos');
+    lista.innerHTML = '';
+    planos.forEach((p, i) => {
+      const el = document.createElement('article');
+      el.className = 'plano revelar' + (p === melhor && planos.length > 1 ? ' top' : '');
+      el.style.transitionDelay = i * 90 + 'ms';
+      const itens = (extras[p.id] || ['Acesso completo ao WEISX PRO']).map(t => `<li>${t}</li>`).join('');
+      el.innerHTML = `
+        ${p === melhor && planos.length > 1 ? '<span class="tag">MELHOR CUSTO</span>' : ''}
+        <small>${p.id === 'teste' ? 'Pra testar' : 'Plano'}</small>
+        <h3>${p.dias} ${p.dias === 1 ? 'DIA' : 'DIAS'}</h3>
+        <div class="valor">${p.preco > 0 ? `<sup>R$</sup>${reais(p.preco)}` : 'GRÁTIS'}</div>
+        <div class="dia">${p.preco > 0 && p.dias > 1 ? `R$ ${centavos(porDia(p))} por dia` : ''}</div>
+        <ul>${itens}</ul>
+        <a class="btn ${p === melhor ? 'btn-cheio' : 'btn-linha'}" href="download">Assinar</a>`;
+      lista.appendChild(el);
+    });
+  })();
+
+  /* ---------- contato ---------- */
+  document.getElementById('formContato').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target, st = document.getElementById('status'), btn = document.getElementById('btnEnviar');
+    const dados = {
+      nome: f.nome.value.trim(), contato: f.contato.value.trim(),
+      tipo: f.tipo.value, texto: f.texto.value.trim(), site: f.site.value,
+    };
+    if (!dados.nome || !dados.contato) { st.className = 'status erro'; st.textContent = 'Coloque seu nome e um Discord ou e-mail pra gente responder.'; return; }
+    if (dados.texto.length < 5) { st.className = 'status erro'; st.textContent = 'Escreva um pouco mais na mensagem.'; return; }
+    btn.disabled = true; st.className = 'status'; st.textContent = 'Enviando...';
+    try {
+      const r = await fetch('contato', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.erro || 'Não deu pra enviar agora. Tente de novo em alguns minutos.');
+      st.className = 'status ok'; st.textContent = 'Mensagem enviada! Obrigado por ajudar a melhorar o WEISX PRO.';
+      f.texto.value = '';
+    } catch (err) {
+      st.className = 'status erro';
+      st.textContent = err.message && err.message !== 'Failed to fetch' ? err.message : 'Não deu pra enviar agora. Tente de novo em alguns minutos.';
+    } finally { btn.disabled = false; }
+  });
+</script>
+</body>
+</html>

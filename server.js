@@ -61,6 +61,15 @@ const Cupom = mongoose.model('Cupom', new mongoose.Schema({
   criadoEm: { type: Date, default: Date.now },
 }));
 
+const Mensagem = mongoose.model('Mensagem', new mongoose.Schema({
+  nome:     { type: String, required: true },
+  contato:  { type: String, required: true },
+  tipo:     { type: String, default: 'sugestao' },   // sugestao | bug | duvida | outro
+  texto:    { type: String, required: true },
+  lida:     { type: Boolean, default: false },
+  criadoEm: { type: Date, default: Date.now },
+}));
+
 // ---------- FUNÇÕES ----------
 function gerarToken(u) {
   // Token dura 1 ano e é renovado toda vez que o app abre = login "pra sempre"
@@ -183,7 +192,39 @@ app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json());
 
-app.get('/', (req, res) => res.send('WEISX PRO online'));
+// ---------- SITE ----------
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'site.html')));
+app.get('/weisx.png', (req, res) => res.sendFile(path.join(__dirname, 'weisx.png')));
+app.get('/status', (req, res) => res.send('WEISX PRO online'));
+
+// Botão "Baixar": leva pro link do instalador (variável DOWNLOAD_URL no Render)
+app.get('/download', (req, res) => {
+  const url = process.env.DOWNLOAD_URL;
+  if (url && /^https:\/\//.test(url)) return res.redirect(url);
+  res.status(200).send('<meta charset="utf-8"><body style="background:#090507;color:#f5eef0;font-family:Segoe UI,sans-serif;display:grid;place-items:center;height:100vh;margin:0;text-align:center"><div><h2>Download disponível em breve</h2><p><a href="/" style="color:#ef3b3b">Voltar ao site</a></p></div>');
+});
+
+// Formulário de contato do site (bloqueia spam: 5 mensagens por hora por pessoa)
+const envios = new Map();
+const TIPOS = ['sugestao', 'bug', 'duvida', 'outro'];
+app.post('/contato', h(async (req, res) => {
+  if (req.body.site) return res.json({ ok: true }); // robô preencheu o campo escondido
+  const agora = Date.now();
+  const lista = (envios.get(req.ip) || []).filter(t => agora - t < 60 * 60 * 1000);
+  if (lista.length >= 5) return res.status(429).json({ erro: 'Você já mandou várias mensagens. Tente de novo daqui a pouco.' });
+
+  const nome = String(req.body.nome || '').trim().slice(0, 40);
+  const contato = String(req.body.contato || '').trim().slice(0, 80);
+  const texto = String(req.body.texto || '').trim().slice(0, 1000);
+  const tipo = TIPOS.includes(req.body.tipo) ? req.body.tipo : 'outro';
+  if (!nome || !contato) return res.status(400).json({ erro: 'Coloque seu nome e um Discord ou e-mail.' });
+  if (texto.length < 5) return res.status(400).json({ erro: 'Escreva um pouco mais na mensagem.' });
+
+  await Mensagem.create({ nome, contato, tipo, texto });
+  lista.push(agora);
+  envios.set(req.ip, lista);
+  res.json({ ok: true });
+}));
 
 app.post('/cadastro', h(async (req, res) => {
   const usuario = String(req.body.usuario || '').trim().toLowerCase();
@@ -339,13 +380,14 @@ app.post('/admin/login', (req, res) => {
 
 app.get('/admin/resumo', admin, h(async (req, res) => {
   const agora = new Date();
-  const [total, ativos, online, fat] = await Promise.all([
+  const [total, ativos, online, fat, novas] = await Promise.all([
     Usuario.countDocuments(),
     Usuario.countDocuments({ acessoAte: { $gt: agora } }),
     Usuario.countDocuments({ ultimoPing: { $gt: new Date(Date.now() - ONLINE_MS) } }),
     Pagamento.aggregate([{ $match: { creditado: true } }, { $group: { _id: null, total: { $sum: '$valor' } } }]),
+    Mensagem.countDocuments({ lida: false }),
   ]);
-  res.json({ total, ativos, online, faturamento: fat[0] ? fat[0].total : 0 });
+  res.json({ total, ativos, online, faturamento: fat[0] ? fat[0].total : 0, mensagensNovas: novas });
 }));
 
 app.get('/admin/usuarios', admin, h(async (req, res) => {
@@ -413,6 +455,26 @@ app.patch('/admin/cupons/:id', admin, h(async (req, res) => {
 app.delete('/admin/cupons/:id', admin, h(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ erro: 'Cupom não encontrado.' });
   await Cupom.deleteOne({ _id: req.params.id });
+  res.json({ ok: true });
+}));
+
+// Mensagens do contato
+app.get('/admin/mensagens', admin, h(async (req, res) => {
+  const lista = await Mensagem.find().sort({ criadoEm: -1 }).limit(500);
+  res.json({ mensagens: lista.map(m => ({
+    id: m._id, nome: m.nome, contato: m.contato, tipo: m.tipo, texto: m.texto, lida: m.lida, criadoEm: m.criadoEm,
+  })) });
+}));
+
+app.patch('/admin/mensagens/:id', admin, h(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ erro: 'Mensagem não encontrada.' });
+  await Mensagem.updateOne({ _id: req.params.id }, { lida: !!req.body.lida });
+  res.json({ ok: true });
+}));
+
+app.delete('/admin/mensagens/:id', admin, h(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ erro: 'Mensagem não encontrada.' });
+  await Mensagem.deleteOne({ _id: req.params.id });
   res.json({ ok: true });
 }));
 
