@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WEISX PRO · ADM</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --fundo: #0a0a0a; --caixa: #121212; --borda: #262626; --texto: #eee; --fraco: #8a8a8a;
+    --vermelho: #e10600; --verde: #3ddc84; --amarelo: #f5c542;
+  }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--fundo); color: var(--texto); min-height: 100vh; }
+  button, input, select { font: inherit; }
+  .logo { font-weight: 900; letter-spacing: 2px; font-size: 22px; }
+  .logo span { color: var(--vermelho); }
+  .tag { font-size: 11px; background: var(--vermelho); color: #fff; padding: 2px 7px; border-radius: 4px; margin-left: 6px; letter-spacing: 1px; vertical-align: middle; }
+
+  /* Login */
+  .login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px;
+    background: radial-gradient(circle at 50% 0%, #2a0000 0%, var(--fundo) 60%); }
+  .login form { width: 100%; max-width: 340px; background: var(--caixa); border: 1px solid var(--borda);
+    border-top: 3px solid var(--vermelho); border-radius: 12px; padding: 30px 24px; text-align: center; }
+  .login p { color: var(--fraco); font-size: 13px; margin: 6px 0 20px; }
+  input, select { width: 100%; padding: 11px 12px; background: #0d0d0d; border: 1px solid #333; border-radius: 8px; color: #fff; outline: none; }
+  input:focus, select:focus { border-color: var(--vermelho); }
+  .btn { padding: 11px 16px; border: 0; border-radius: 8px; background: var(--vermelho); color: #fff; font-weight: 700; cursor: pointer; }
+  .btn:hover { background: #ff1a10; }
+  .btn.sec { background: transparent; border: 1px solid #333; color: #ccc; }
+  .btn.sec:hover { border-color: var(--vermelho); color: #fff; }
+  .btn.mini { padding: 6px 10px; font-size: 13px; }
+  .login .btn { width: 100%; margin-top: 14px; }
+  .erro { color: #ff4a42; font-size: 13px; margin-top: 12px; min-height: 16px; }
+
+  /* Painel */
+  header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 20px;
+    border-bottom: 1px solid var(--borda); background: var(--caixa); position: sticky; top: 0; z-index: 5; }
+  header div { display: flex; gap: 8px; }
+  main { max-width: 1200px; margin: 0 auto; padding: 20px 16px 40px; }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .card { background: var(--caixa); border: 1px solid var(--borda); border-radius: 10px; padding: 16px; }
+  .card small { color: var(--fraco); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .card b { display: block; font-size: 28px; margin-top: 6px; }
+  .card.on b { color: var(--verde); }
+  .abas { display: flex; gap: 6px; margin-bottom: 14px; border-bottom: 1px solid var(--borda); }
+  .abas button { background: none; border: 0; color: var(--fraco); padding: 10px 16px; cursor: pointer; font-weight: 600; border-bottom: 2px solid transparent; }
+  .abas button.ativa { color: #fff; border-color: var(--vermelho); }
+  .barra { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .barra input { flex: 1; min-width: 180px; }
+  .barra select { width: auto; }
+  .tabela { overflow-x: auto; background: var(--caixa); border: 1px solid var(--borda); border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; min-width: 760px; }
+  th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--borda); font-size: 14px; white-space: nowrap; }
+  th { color: var(--fraco); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+  tr:last-child td { border-bottom: 0; }
+  td small { display: block; color: var(--fraco); font-size: 12px; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #444; margin-right: 8px; vertical-align: middle; }
+  .dot.on { background: var(--verde); box-shadow: 0 0 8px var(--verde); }
+  .badge { padding: 3px 9px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .badge.ok { background: rgba(61,220,132,.12); color: var(--verde); }
+  .badge.perto { background: rgba(245,197,66,.12); color: var(--amarelo); }
+  .badge.fim { background: rgba(225,6,0,.15); color: #ff4a42; }
+  .badge.nada { background: #1d1d1d; color: var(--fraco); }
+  .acoes { display: flex; gap: 6px; align-items: center; }
+  .acoes input { width: 64px; padding: 6px 8px; }
+  .vazio { text-align: center; color: var(--fraco); padding: 30px; }
+  .novo-cupom { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 14px;
+    background: var(--caixa); border: 1px solid var(--borda); border-radius: 10px; padding: 16px; }
+  .novo-cupom label { font-size: 12px; color: var(--fraco); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+  #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1b1b1b; border: 1px solid var(--borda);
+    padding: 12px 18px; border-radius: 8px; font-size: 14px; opacity: 0; pointer-events: none; transition: .2s; z-index: 10; }
+  #toast.show { opacity: 1; }
+  #toast.erro { border-color: var(--vermelho); color: #ff4a42; }
+  [hidden] { display: none !important; }
+
+  @media (max-width: 700px) {
+    .cards { grid-template-columns: repeat(2, 1fr); }
+    .novo-cupom { grid-template-columns: 1fr 1fr; }
+    .novo-cupom div:first-child { grid-column: 1 / -1; }
+    header { padding: 12px 16px; }
+    .logo { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="telaLogin" class="login">
+  <form id="formLogin">
+    <div class="logo">WEISX <span>PRO</span><span class="tag">ADM</span></div>
+    <p>Painel do administrador</p>
+    <input id="senha" type="password" placeholder="Senha do ADM" required autocomplete="current-password">
+    <button class="btn" type="submit">ENTRAR</button>
+    <div class="erro" id="erroLogin"></div>
+  </form>
+</div>
+
+<!-- PAINEL -->
+<div id="painel" hidden>
+  <header>
+    <div class="logo">WEISX <span>PRO</span><span class="tag">ADM</span></div>
+    <div>
+      <button class="btn sec mini" id="btnAtualizar">Atualizar</button>
+      <button class="btn sec mini" id="btnSair">Sair</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="cards">
+      <div class="card"><small>Contas</small><b id="cTotal">0</b></div>
+      <div class="card"><small>Acesso ativo</small><b id="cAtivos">0</b></div>
+      <div class="card on"><small>Online agora</small><b id="cOnline">0</b></div>
+      <div class="card"><small>Faturado</small><b id="cFat">R$ 0,00</b></div>
+    </section>
+
+    <nav class="abas">
+      <button data-aba="abaContas" class="ativa">Contas</button>
+      <button data-aba="abaCupons">Cupons</button>
+    </nav>
+
+    <!-- CONTAS -->
+    <section id="abaContas">
+      <div class="barra">
+        <input id="busca" placeholder="Buscar por usuário ou e-mail...">
+        <select id="ordem">
+          <option value="vencer">Vence primeiro</option>
+          <option value="online">Online primeiro</option>
+          <option value="novos">Mais novos</option>
+        </select>
+      </div>
+      <div class="tabela">
+        <table>
+          <thead>
+            <tr><th>Usuário</th><th>Plano</th><th>Vence em</th><th>Dias restantes</th><th>Último acesso</th><th>Dar / tirar dias</th></tr>
+          </thead>
+          <tbody id="listaContas"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CUPONS -->
+    <section id="abaCupons" hidden>
+      <form class="novo-cupom" id="formCupom">
+        <div><label>Código</label><input id="cupCodigo" placeholder="EX: ZAYN50" maxlength="20" required></div>
+        <div><label>Desconto %</label><input id="cupDesconto" type="number" min="1" max="100" value="10" required></div>
+        <div><label>Limite de usos</label><input id="cupUsos" type="number" min="0" value="0" title="0 = ilimitado"></div>
+        <button class="btn" type="submit">Criar cupom</button>
+      </form>
+      <div class="tabela">
+        <table>
+          <thead><tr><th>Código</th><th>Desconto</th><th>Usos</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody id="listaCupons"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  let token = null;
+  try { token = localStorage.getItem('weisx_adm'); } catch {}
+  let usuarios = [];
+  let cupons = [];
+  let timer = null;
+
+  // ---------- utilidades ----------
+  async function api(caminho, { method = 'GET', body } = {}) {
+    const r = await fetch(caminho, {
+      method,
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 401 && caminho !== '/admin/login') { sair(); throw new Error('Faça login de novo.'); }
+    if (!r.ok) throw new Error(d.erro || 'Erro no servidor.');
+    return d;
+  }
+  function toast(texto, erro) {
+    const t = $('toast');
+    t.textContent = texto;
+    t.className = 'show' + (erro ? ' erro' : '');
+    clearTimeout(t._t);
+    t._t = setTimeout(() => t.className = '', 2600);
+  }
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  const reais = v => 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',');
+  const data = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+  function tempo(d) {
+    if (!d) return 'Offline';
+    const m = Math.floor((Date.now() - new Date(d)) / 60000);
+    if (m < 1) return 'agora';
+    if (m < 60) return `há ${m} min`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `há ${h} h`;
+    return `há ${Math.floor(h / 24)} dia(s)`;
+  }
+
+  // ---------- login ----------
+  $('formLogin').onsubmit = async e => {
+    e.preventDefault();
+    $('erroLogin').textContent = '';
+    try {
+      const d = await api('/admin/login', { method: 'POST', body: { senha: $('senha').value } });
+      token = d.token;
+      try { localStorage.setItem('weisx_adm', token); } catch {}
+      $('senha').value = '';
+      abrirPainel();
+    } catch (err) {
+      $('erroLogin').textContent = err.message;
+    }
+  };
+
+  function sair() {
+    token = null;
+    try { localStorage.removeItem('weisx_adm'); } catch {}
+    clearInterval(timer);
+    $('painel').hidden = true;
+    $('telaLogin').hidden = false;
+  }
+  $('btnSair').onclick = sair;
+
+  async function abrirPainel() {
+    $('telaLogin').hidden = true;
+    $('painel').hidden = false;
+    await carregar();
+    clearInterval(timer);
+    timer = setInterval(carregar, 30000); // atualiza sozinho a cada 30s
+  }
+
+  async function carregar() {
+    try {
+      const [r, u, c] = await Promise.all([api('/admin/resumo'), api('/admin/usuarios'), api('/admin/cupons')]);
+      $('cTotal').textContent = r.total;
+      $('cAtivos').textContent = r.ativos;
+      $('cOnline').textContent = r.online;
+      $('cFat').textContent = reais(r.faturamento);
+      usuarios = u.usuarios;
+      cupons = c.cupons;
+      mostrarContas();
+      mostrarCupons();
+    } catch (e) {
+      if (token) toast(e.message, true);
+    }
+  }
+  $('btnAtualizar').onclick = () => carregar().then(() => toast('Atualizado!'));
+
+  // ---------- abas ----------
+  document.querySelectorAll('.abas button').forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll('.abas button').forEach(x => x.classList.toggle('ativa', x === b));
+      $('abaContas').hidden = b.dataset.aba !== 'abaContas';
+      $('abaCupons').hidden = b.dataset.aba !== 'abaCupons';
+    };
+  });
+
+  // ---------- contas ----------
+  function mostrarContas() {
+    const q = $('busca').value.trim().toLowerCase();
+    let lista = usuarios.filter(u => !q || u.usuario.includes(q) || u.email.includes(q));
+    const ordem = $('ordem').value;
+    const vence = u => u.ativo ? new Date(u.acessoAte).getTime() : (u.acessoAte ? 9e15 : 9.9e15);
+    if (ordem === 'vencer') lista.sort((a, b) => vence(a) - vence(b));
+    if (ordem === 'novos') lista.sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
+    if (ordem === 'online') lista.sort((a, b) => (b.online - a.online) || (new Date(b.ultimoPing || 0) - new Date(a.ultimoPing || 0)));
+
+    if (!lista.length) {
+      $('listaContas').innerHTML = `<tr><td colspan="6" class="vazio">${q ? 'Nenhuma conta encontrada.' : 'Nenhuma conta ainda.'}</td></tr>`;
+      return;
+    }
+
+    $('listaContas').innerHTML = lista.map(u => {
+      let badge;
+      if (u.ativo) badge = `<span class="badge ${u.diasRestantes <= 3 ? 'perto' : 'ok'}">${u.diasRestantes} dia(s)</span>`;
+      else if (u.acessoAte) badge = `<span class="badge fim">Vencido</span>`;
+      else badge = `<span class="badge nada">Sem plano</span>`;
+      return `<tr>
+        <td><span class="dot ${u.online ? 'on' : ''}"></span><b>${esc(u.usuario)}</b><small>${esc(u.email)}</small></td>
+        <td>${esc(u.plano || '—')}</td>
+        <td>${data(u.acessoAte)}</td>
+        <td>${badge}</td>
+        <td>${u.online ? '<span style="color:var(--verde)">Online agora</span>' : tempo(u.ultimoPing)}</td>
+        <td><div class="acoes" data-id="${esc(u.id)}">
+          <input type="number" min="1" max="3650" value="1">
+          <button class="btn mini" data-acao="dar">+ Dar</button>
+          <button class="btn sec mini" data-acao="tirar">− Tirar</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+  $('busca').oninput = mostrarContas;
+  $('ordem').onchange = mostrarContas;
+
+  $('listaContas').onclick = async e => {
+    const b = e.target.closest('button[data-acao]');
+    if (!b) return;
+    const box = b.closest('.acoes');
+    const n = parseInt(box.querySelector('input').value, 10);
+    if (!n || n < 1) return toast('Coloca quantos dias.', true);
+    const dias = b.dataset.acao === 'dar' ? n : -n;
+    const nome = box.closest('tr').querySelector('b').textContent;
+    if (!confirm(`${dias > 0 ? 'Dar' : 'Tirar'} ${n} dia(s) ${dias > 0 ? 'para' : 'de'} ${nome}?`)) return;
+    try {
+      await api(`/admin/usuarios/${box.dataset.id}/dias`, { method: 'POST', body: { dias } });
+      toast('Feito!');
+      carregar();
+    } catch (err) { toast(err.message, true); }
+  };
+
+  // ---------- cupons ----------
+  function mostrarCupons() {
+    if (!cupons.length) {
+      $('listaCupons').innerHTML = '<tr><td colspan="5" class="vazio">Nenhum cupom criado ainda.</td></tr>';
+      return;
+    }
+    $('listaCupons').innerHTML = cupons.map(c => `<tr>
+      <td><b>${esc(c.codigo)}</b></td>
+      <td>${c.desconto}%${c.desconto === 100 ? ' <small style="display:inline">(grátis)</small>' : ''}</td>
+      <td>${c.usos} / ${c.usosMax || '∞'}</td>
+      <td>${c.ativo ? '<span class="badge ok">Ativo</span>' : '<span class="badge nada">Desativado</span>'}</td>
+      <td><div class="acoes" data-id="${esc(c.id)}">
+        <button class="btn sec mini" data-acao="alternar" data-ativo="${c.ativo}">${c.ativo ? 'Desativar' : 'Ativar'}</button>
+        <button class="btn sec mini" data-acao="excluir">Excluir</button>
+      </div></td>
+    </tr>`).join('');
+  }
+
+  $('formCupom').onsubmit = async e => {
+    e.preventDefault();
+    try {
+      await api('/admin/cupons', { method: 'POST', body: {
+        codigo: $('cupCodigo').value, desconto: $('cupDesconto').value, usosMax: $('cupUsos').value,
+      } });
+      toast('Cupom criado!');
+      $('cupCodigo').value = '';
+      carregar();
+    } catch (err) { toast(err.message, true); }
+  };
+
+  $('listaCupons').onclick = async e => {
+    const b = e.target.closest('button[data-acao]');
+    if (!b) return;
+    const id = b.closest('.acoes').dataset.id;
+    try {
+      if (b.dataset.acao === 'alternar') {
+        await api('/admin/cupons/' + id, { method: 'PATCH', body: { ativo: b.dataset.ativo !== 'true' } });
+      } else {
+        if (!confirm('Excluir esse cupom?')) return;
+        await api('/admin/cupons/' + id, { method: 'DELETE' });
+      }
+      carregar();
+    } catch (err) { toast(err.message, true); }
+  };
+
+  if (token) abrirPainel();
+</script>
+</body>
+</html>
