@@ -30,6 +30,7 @@ const ONLINE_MS = 7 * 60 * 1000; // conta como online se o app deu sinal nos úl
 
 // ---------- BANCO DE DADOS ----------
 const Usuario = mongoose.model('Usuario', new mongoose.Schema({
+  
   usuario:     { type: String, required: true, unique: true, lowercase: true, trim: true },
   email:       { type: String, required: true, unique: true, lowercase: true, trim: true },
   senhaHash:   { type: String, required: true },
