@@ -135,4 +135,97 @@ app.post('/cadastro', async (req, res) => {
   if (senha.length < 6)
     return res.status(400).json({ erro: 'A senha precisa ter pelo menos 6 caracteres.' });
 
-  if (await Usuario.findOne({ usuario })) return res.status(409).json({ erro: 'Esse usuário
+  if (await Usuario.findOne({ usuario })) return res.status(409).json({ erro: 'Esse usuário já existe.' });
+  if (await Usuario.findOne({ email }))   return res.status(409).json({ erro: 'Esse e-mail já tem conta.' });
+
+  const u = await Usuario.create({ usuario, email, senhaHash: await bcrypt.hash(senha, 10) });
+  res.json({ token: gerarToken(u), conta: resumo(u) });
+});
+
+app.post('/login', async (req, res) => {
+  const usuario = String(req.body.usuario || '').trim().toLowerCase();
+  const senha = String(req.body.senha || '');
+  const u = await Usuario.findOne({ $or: [{ usuario }, { email: usuario }] });
+  if (!u || !(await bcrypt.compare(senha, u.senhaHash)))
+    return res.status(401).json({ erro: 'Usuário ou senha incorretos.' });
+  res.json({ token: gerarToken(u), conta: resumo(u) });
+});
+
+app.get('/me', auth, (req, res) => {
+  res.json({ token: gerarToken(req.user), conta: resumo(req.user) });
+});
+
+app.get('/planos', (req, res) => {
+  res.json({ planos: Object.entries(PLANOS).map(([id, p]) => ({ id, ...p })) });
+});
+
+app.post('/comprar', auth, async (req, res) => {
+  const plano = String(req.body.plano || '');
+  const p = PLANOS[plano];
+  if (!p) return res.status(400).json({ erro: 'Plano inválido.' });
+  if (plano === 'teste' && req.user.usouTeste)
+    return res.status(400).json({ erro: 'Você já usou o teste de 1 dia.' });
+
+  // Teste grátis: libera na hora
+  if (p.preco <= 0) {
+    liberar(req.user, p.dias);
+    if (plano === 'teste') req.user.usouTeste = true;
+    await req.user.save();
+    return res.json({ liberado: true, conta: resumo(req.user) });
+  }
+
+  // Pago: gera PIX no Mercado Pago
+  const r = await fetch('https://api.mercadopago.com/v1/payments', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
+      'Content-Type': 'application/json',
+      'X-Idempotency-Key': crypto.randomUUID(),
+    },
+    body: JSON.stringify({
+      transaction_amount: p.preco,
+      description: `WEISX PRO - ${p.nome}`,
+      payment_method_id: 'pix',
+      payer: { email: req.user.email },
+      notification_url: `${PUBLIC_URL}/webhook/mercadopago`,
+      external_reference: `${req.user._id}:${plano}`,
+    }),
+  });
+  const mp = await r.json();
+  if (!r.ok) {
+    console.error('Erro Mercado Pago:', mp);
+    return res.status(500).json({ erro: 'Não foi possível gerar o PIX. Tente de novo.' });
+  }
+
+  await Pagamento.create({
+    mpId: String(mp.id), usuarioId: req.user._id, plano, valor: p.preco, status: mp.status,
+  });
+
+  const pix = mp.point_of_interaction.transaction_data;
+  res.json({
+    pagamentoId: String(mp.id),
+    valor: p.preco,
+    qrCode: pix.qr_code,
+    qrCodeBase64: pix.qr_code_base64,
+  });
+});
+
+app.get('/pagamento/:id', auth, async (req, res) => {
+  const pag = await Pagamento.findOne({ mpId: req.params.id, usuarioId: req.user._id });
+  if (!pag) return res.status(404).json({ erro: 'Pagamento não encontrado.' });
+  const atual = await verificarPagamento(pag.mpId);
+  const u = await Usuario.findById(req.user._id);
+  res.json({ status: atual.status, conta: resumo(u) });
+});
+
+// Mercado Pago avisa aqui quando o PIX é pago
+app.post('/webhook/mercadopago', async (req, res) => {
+  res.sendStatus(200);
+  const id = req.query['data.id'] || req.body?.data?.id || req.query.id;
+  if (id) verificarPagamento(id).catch(e => console.error('Webhook:', e));
+});
+
+// ---------- INICIAR ----------
+mongoose.connect(MONGODB_URI)
+  .then(() => app.listen(PORT, () => console.log('WEISX PRO rodando na porta', PORT)))
+  .catch(e => { console.error('Erro ao conectar no banco:', e); process.exit(1); });
