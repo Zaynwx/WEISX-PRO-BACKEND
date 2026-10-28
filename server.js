@@ -30,7 +30,6 @@ const ONLINE_MS = 7 * 60 * 1000; // conta como online se o app deu sinal nos úl
 
 // ---------- BANCO DE DADOS ----------
 const Usuario = mongoose.model('Usuario', new mongoose.Schema({
-  
   usuario:     { type: String, required: true, unique: true, lowercase: true, trim: true },
   email:       { type: String, required: true, unique: true, lowercase: true, trim: true },
   senhaHash:   { type: String, required: true },
@@ -69,6 +68,17 @@ const Mensagem = mongoose.model('Mensagem', new mongoose.Schema({
   texto:    { type: String, required: true },
   lida:     { type: Boolean, default: false },
   criadoEm: { type: Date, default: Date.now },
+}));
+
+// Log do site: visitas e cliques (apagados sozinhos depois de 90 dias)
+const EventoSite = mongoose.model('EventoSite', new mongoose.Schema({
+  tipo:      { type: String, required: true },   // visita | download | assinar | planos | contato | site_dev
+  detalhe:   { type: String, default: '' },      // ex.: qual plano
+  visitante: { type: String, default: '' },      // código anônimo do navegador
+  origem:    { type: String, default: '' },      // de onde veio (google, instagram, direto...)
+  aparelho:  { type: String, default: '' },      // Celular | PC
+  navegador: { type: String, default: '' },
+  criadoEm:  { type: Date, default: Date.now, expires: 60 * 60 * 24 * 90 },
 }));
 
 // ---------- FUNÇÕES ----------
@@ -198,8 +208,63 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'site.html')));
 app.get('/weisx.png', (req, res) => res.sendFile(path.join(__dirname, 'weisx.png')));
 app.get('/status', (req, res) => res.send('WEISX PRO online'));
 
+// ---------- LOG DO SITE ----------
+const TIPOS_EVENTO = ['visita', 'download', 'assinar', 'planos', 'contato', 'site_dev'];
+const eventosIp = new Map();
+function lerAparelho(ua) {
+  ua = String(ua || '');
+  const aparelho = /Mobi|Android|iPhone|iPad/i.test(ua) ? 'Celular' : 'PC';
+  const navegador = /Edg\//.test(ua) ? 'Edge' : /OPR\/|Opera/.test(ua) ? 'Opera'
+    : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox'
+    : /Safari\//.test(ua) ? 'Safari' : 'Outro';
+  return { aparelho, navegador };
+}
+function lerOrigem(ref) {
+  try {
+    const host = new URL(String(ref)).hostname.replace(/^www\./, '');
+    if (!host || host.endsWith('onrender.com')) return 'Direto';
+    if (/google\./.test(host)) return 'Google';
+    if (/instagram\./.test(host)) return 'Instagram';
+    if (/tiktok\./.test(host)) return 'TikTok';
+    if (/youtube\.|youtu\.be/.test(host)) return 'YouTube';
+    if (/discord/.test(host)) return 'Discord';
+    if (/kick\.com/.test(host)) return 'Kick';
+    if (/twitch\./.test(host)) return 'Twitch';
+    if (/(^|\.)(t\.co|x\.com|twitter\.com)$/.test(host)) return 'X / Twitter';
+    if (/whatsapp|wa\.me/.test(host)) return 'WhatsApp';
+    return host.slice(0, 40);
+  } catch { return 'Direto'; }
+}
+async function registrar(req, tipo, extra = {}) {
+  // no máximo 60 eventos por minuto da mesma pessoa (evita encher o banco)
+  const agora = Date.now();
+  const l = (eventosIp.get(req.ip) || []).filter(t => agora - t < 60000);
+  if (l.length >= 60) return;
+  l.push(agora); eventosIp.set(req.ip, l);
+  if (eventosIp.size > 5000) eventosIp.clear();
+  const { aparelho, navegador } = lerAparelho(req.headers['user-agent']);
+  await EventoSite.create({
+    tipo,
+    detalhe: String(extra.detalhe || '').slice(0, 40),
+    visitante: String(extra.visitante || '').replace(/[^a-z0-9]/gi, '').slice(0, 24),
+    origem: extra.origem !== undefined ? lerOrigem(extra.origem) : '',
+    aparelho, navegador,
+  });
+}
+
+app.post('/evento', (req, res) => {
+  res.json({ ok: true });
+  const tipo = String(req.body.tipo || '');
+  if (!TIPOS_EVENTO.includes(tipo) || tipo === 'download') return; // download é contado no /download
+  registrar(req, tipo, {
+    detalhe: req.body.detalhe, visitante: req.body.visitante,
+    origem: tipo === 'visita' ? req.body.origem : undefined,
+  }).catch(e => console.error('Evento:', e));
+});
+
 // Botão "Baixar": leva pro link do instalador (variável DOWNLOAD_URL no Render)
 app.get('/download', (req, res) => {
+  registrar(req, 'download', { visitante: req.query.v, detalhe: req.query.de }).catch(e => console.error('Evento:', e));
   const url = process.env.DOWNLOAD_URL;
   if (url && /^https:\/\//.test(url)) return res.redirect(url);
   res.status(200).send('<meta charset="utf-8"><body style="background:#090507;color:#f5eef0;font-family:Segoe UI,sans-serif;display:grid;place-items:center;height:100vh;margin:0;text-align:center"><div><h2>Download disponível em breve</h2><p><a href="/" style="color:#ef3b3b">Voltar ao site</a></p></div>');
@@ -457,6 +522,53 @@ app.delete('/admin/cupons/:id', admin, h(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ erro: 'Cupom não encontrado.' });
   await Cupom.deleteOne({ _id: req.params.id });
   res.json({ ok: true });
+}));
+
+// Log do site
+app.get('/admin/site', admin, h(async (req, res) => {
+  const agora = new Date();
+  const hoje = new Date(agora); hoje.setUTCHours(3, 0, 0, 0);            // meia-noite de Brasília
+  if (hoje > agora) hoje.setUTCDate(hoje.getUTCDate() - 1);
+  const inicio7 = new Date(hoje); inicio7.setUTCDate(inicio7.getUTCDate() - 6);
+  const desde30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const contar = (filtro) => EventoSite.countDocuments(filtro);
+  const unicos = async (filtro) => (await EventoSite.distinct('visitante', { ...filtro, visitante: { $ne: '' } })).length;
+
+  const [visitasHoje, unicosHoje, downloadsHoje, assinarHoje, visitas7, unicos7, downloads7, porDia, origens, aparelhos, log] = await Promise.all([
+    contar({ tipo: 'visita', criadoEm: { $gte: hoje } }),
+    unicos({ tipo: 'visita', criadoEm: { $gte: hoje } }),
+    contar({ tipo: 'download', criadoEm: { $gte: hoje } }),
+    contar({ tipo: 'assinar', criadoEm: { $gte: hoje } }),
+    contar({ tipo: 'visita', criadoEm: { $gte: inicio7 } }),
+    unicos({ tipo: 'visita', criadoEm: { $gte: inicio7 } }),
+    contar({ tipo: 'download', criadoEm: { $gte: inicio7 } }),
+    EventoSite.aggregate([
+      { $match: { criadoEm: { $gte: inicio7 }, tipo: { $in: ['visita', 'download'] } } },
+      { $group: { _id: { dia: { $dateToString: { format: '%Y-%m-%d', date: '$criadoEm', timezone: 'America/Sao_Paulo' } }, tipo: '$tipo' }, n: { $sum: 1 } } },
+    ]),
+    EventoSite.aggregate([
+      { $match: { tipo: 'visita', criadoEm: { $gte: desde30 } } },
+      { $group: { _id: '$origem', n: { $sum: 1 } } }, { $sort: { n: -1 } }, { $limit: 6 },
+    ]),
+    EventoSite.aggregate([
+      { $match: { tipo: 'visita', criadoEm: { $gte: desde30 } } },
+      { $group: { _id: '$aparelho', n: { $sum: 1 } } },
+    ]),
+    EventoSite.find().sort({ criadoEm: -1 }).limit(300),
+  ]);
+
+  res.json({
+    hoje: { visitas: visitasHoje, unicos: unicosHoje, downloads: downloadsHoje, assinar: assinarHoje },
+    semana: { visitas: visitas7, unicos: unicos7, downloads: downloads7 },
+    porDia: porDia.map(d => ({ dia: d._id.dia, tipo: d._id.tipo, n: d.n })),
+    origens: origens.map(o => ({ nome: o._id || 'Direto', n: o.n })),
+    aparelhos: aparelhos.map(a => ({ nome: a._id || '?', n: a.n })),
+    log: log.map(e => ({
+      tipo: e.tipo, detalhe: e.detalhe, visitante: e.visitante, origem: e.origem,
+      aparelho: e.aparelho, navegador: e.navegador, criadoEm: e.criadoEm,
+    })),
+  });
 }));
 
 // Mensagens do contato

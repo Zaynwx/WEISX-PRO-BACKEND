@@ -231,11 +231,11 @@
     <a class="marca" href="#inicio"><img src="weisx.png" alt="">WEISX <b>PRO</b></a>
     <nav class="menu">
       <a href="#recursos">Recursos</a>
-      <a href="#planos">Planos</a>
+      <a href="#planos" data-ev="planos">Planos</a>
       <a href="#seguranca">Segurança</a>
       <a href="#contato">Contato</a>
     </nav>
-    <a class="btn btn-cheio" href="download">Baixar</a>
+    <a class="btn btn-cheio" href="download" data-ev="topo">Baixar</a>
   </div>
 </header>
 
@@ -248,11 +248,11 @@
         <h1>WEISX<span>PRO</span></h1>
         <p class="lead">Coloque parede, escada, piso e cone <b>no instante</b> em que aperta a tecla, e saque a doze <b>no momento</b> em que solta o tiro. Tudo configurável nas suas binds.</p>
         <div class="acoes">
-          <a class="btn btn-cheio" href="download">
+          <a class="btn btn-cheio" href="download" data-ev="inicio">
             Baixar agora
             <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11 4h2v9.2l3.3-3.3 1.4 1.4L12 17l-5.7-5.7 1.4-1.4 3.3 3.3V4Zm-6 15h14v2H5v-2Z"/></svg>
           </a>
-          <a class="btn btn-linha" href="#planos">Ver planos</a>
+          <a class="btn btn-linha" href="#planos" data-ev="planos">Ver planos</a>
         </div>
         <p class="preco-de" id="precoDe">Planos a partir de <b>R$ 2/dia</b> · pagamento por PIX</p>
       </div>
@@ -400,13 +400,46 @@
 
 <footer class="faixa">
   <div class="miolo">
-    <span class="fundado">Founded by <a href="https://zippy-douhua-4c4734.netlify.app/#inicio" target="_blank" rel="noopener"><b>WEISX</b> DESENVOLVEDORES</a></span>
+    <span class="fundado">Founded by <a href="https://zippy-douhua-4c4734.netlify.app/#inicio" target="_blank" rel="noopener" data-ev="site_dev"><b>WEISX</b> DESENVOLVEDORES</a></span>
     <span>© 2026 WEISX PRO · Não é afiliado à Epic Games.</span>
   </div>
 </footer>
 
 <script>
   document.documentElement.classList.add('js');
+
+  /* ---------- log do site (vai pro painel ADM) ---------- */
+  (function () {
+    let vid = '';
+    try { vid = localStorage.getItem('weisx_vid') || ''; } catch (e) {}
+    if (!vid) {
+      vid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+      try { localStorage.setItem('weisx_vid', vid); } catch (e) {}
+    }
+    function enviar(tipo, detalhe, extra) {
+      try {
+        const corpo = JSON.stringify(Object.assign({ tipo, detalhe: detalhe || '', visitante: vid }, extra || {}));
+        if (navigator.sendBeacon) navigator.sendBeacon('evento', new Blob([corpo], { type: 'application/json' }));
+        else fetch('evento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: corpo, keepalive: true });
+      } catch (e) {}
+    }
+    window.weisxEvento = enviar;
+    enviar('visita', '', { origem: document.referrer || '' });
+
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('[data-ev]');
+      if (!a) return;
+      const ev = a.dataset.ev;
+      if (a.getAttribute('href') === 'download') {
+        // o próprio /download registra o clique (de onde veio e qual plano)
+        const de = ev === 'assinar' ? 'Assinar ' + (a.dataset.plano || '') : (ev === 'topo' ? 'Botão do topo' : 'Botão principal');
+        a.href = 'download?v=' + encodeURIComponent(vid) + '&de=' + encodeURIComponent(de);
+        if (ev === 'assinar') enviar('assinar', a.dataset.plano || '');
+        return;
+      }
+      enviar(ev, a.dataset.plano || '');
+    }, true);
+  })();
 
   /* ---------- fundo: grade em perspectiva, brilhos e faíscas ---------- */
   (function () {
@@ -510,7 +543,7 @@
         <div class="valor">${p.preco > 0 ? `<sup>R$</sup>${reais(p.preco)}` : 'GRÁTIS'}</div>
         <div class="dia">${p.preco > 0 && p.dias > 1 ? `R$ ${centavos(porDia(p))} por dia` : ''}</div>
         <ul>${itens}</ul>
-        <a class="btn ${p === melhor ? 'btn-cheio' : 'btn-linha'}" href="download">Assinar</a>`;
+        <a class="btn ${p === melhor ? 'btn-cheio' : 'btn-linha'}" href="download" data-ev="assinar" data-plano="${p.dias} ${p.dias === 1 ? 'dia' : 'dias'}">Assinar</a>`;
       lista.appendChild(el);
     });
   })();
@@ -531,6 +564,7 @@
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.erro || 'Não deu pra enviar agora. Tente de novo em alguns minutos.');
       st.className = 'status ok'; st.textContent = 'Mensagem enviada! Obrigado por ajudar a melhorar o WEISX PRO.';
+      window.weisxEvento && window.weisxEvento('contato', dados.tipo);
       f.texto.value = '';
     } catch (err) {
       st.className = 'status erro';

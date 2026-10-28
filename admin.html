@@ -82,6 +82,38 @@
   .tipo.bug { background: rgba(225,6,0,.15); color: #ff4a42; }
   .tipo.duvida { background: rgba(245,197,66,.12); color: var(--amarelo); }
   .tipo.outro { background: #1d1d1d; color: var(--fraco); }
+  .site-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; }
+  .site-cards .card small em { font-style: normal; color: var(--fraco); text-transform: none; letter-spacing: 0; }
+  .site-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .bloco { background: var(--caixa); border: 1px solid var(--borda); border-radius: 10px; padding: 16px; min-width: 0; }
+  .bloco h4 { font-size: 12px; color: var(--fraco); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 14px; }
+  .barras { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; height: 150px; }
+  .dia-col { display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+  .dia-col .pilha { width: 100%; max-width: 34px; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; flex: 1; }
+  .dia-col .b { border-radius: 4px 4px 0 0; min-height: 2px; }
+  .dia-col .b.v { background: var(--vermelho); }
+  .dia-col .b.d { background: var(--verde); border-radius: 4px; }
+  .dia-col small { font-size: 11px; color: var(--fraco); }
+  .dia-col b { font-size: 12px; font-variant-numeric: tabular-nums; }
+  .legenda { display: flex; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--fraco); }
+  .legenda i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  .lista-barra { display: grid; gap: 9px; }
+  .lb { display: grid; grid-template-columns: 90px 1fr 34px; gap: 8px; align-items: center; font-size: 13px; }
+  .lb span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lb .trilho { height: 8px; background: #1d1d1d; border-radius: 4px; overflow: hidden; }
+  .lb .trilho i { display: block; height: 100%; background: var(--vermelho); border-radius: 4px; }
+  .lb b { text-align: right; font-variant-numeric: tabular-nums; }
+  .ev { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+  .ev.visita { background: #1d1d1d; color: #ccc; }
+  .ev.download { background: rgba(61,220,132,.12); color: var(--verde); }
+  .ev.assinar { background: rgba(225,6,0,.15); color: #ff4a42; }
+  .ev.planos, .ev.site_dev { background: rgba(245,197,66,.12); color: var(--amarelo); }
+  .ev.contato { background: rgba(80,140,255,.14); color: #7aa7ff; }
+  .vid { font-family: Consolas, monospace; font-size: 12px; color: var(--fraco); }
+  @media (max-width: 700px) {
+    .site-cards { grid-template-columns: repeat(2, 1fr); }
+    .site-grid { grid-template-columns: 1fr; }
+  }
   #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1b1b1b; border: 1px solid var(--borda);
     padding: 12px 18px; border-radius: 8px; font-size: 14px; opacity: 0; pointer-events: none; transition: .2s; z-index: 10; }
   #toast.show { opacity: 1; }
@@ -134,6 +166,7 @@
       <button data-aba="abaContas" class="ativa">Contas</button>
       <button data-aba="abaCupons">Cupons</button>
       <button data-aba="abaMsgs">Mensagens<span class="n" id="nMsgs" hidden>0</span></button>
+      <button data-aba="abaSite">Site</button>
     </nav>
 
     <!-- CONTAS -->
@@ -171,6 +204,46 @@
         </table>
       </div>
     </section>
+    <!-- SITE -->
+    <section id="abaSite" hidden>
+      <div class="site-cards">
+        <div class="card"><small>Visitas hoje</small><b id="sVisitas">0</b></div>
+        <div class="card"><small>Pessoas hoje <em>(únicas)</em></small><b id="sUnicos">0</b></div>
+        <div class="card on"><small>Downloads hoje</small><b id="sDown">0</b></div>
+        <div class="card"><small>Cliques em assinar</small><b id="sAssinar">0</b></div>
+      </div>
+      <div class="site-grid">
+        <div class="bloco">
+          <h4>Últimos 7 dias · <span id="sSemana"></span></h4>
+          <div class="barras" id="sBarras"></div>
+          <div class="legenda"><span><i style="background:var(--vermelho)"></i>Visitas</span><span><i style="background:var(--verde)"></i>Downloads</span></div>
+        </div>
+        <div class="bloco">
+          <h4>De onde vêm (30 dias)</h4>
+          <div class="lista-barra" id="sOrigens"></div>
+          <h4 style="margin-top:18px">Aparelho</h4>
+          <div class="lista-barra" id="sAparelhos"></div>
+        </div>
+      </div>
+      <div class="barra">
+        <select id="filtroEv">
+          <option value="todos">Todos os eventos</option>
+          <option value="visita">Visitas</option>
+          <option value="download">Downloads</option>
+          <option value="assinar">Cliques em assinar</option>
+          <option value="planos">Viu os planos</option>
+          <option value="contato">Mandou contato</option>
+          <option value="site_dev">Abriu o site da WEISX Desenvolvedores</option>
+        </select>
+      </div>
+      <div class="tabela">
+        <table>
+          <thead><tr><th>Quando</th><th>O que fez</th><th>Detalhe</th><th>Veio de</th><th>Aparelho</th><th>Visitante</th></tr></thead>
+          <tbody id="listaLog"></tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- MENSAGENS -->
     <section id="abaMsgs" hidden>
       <div class="barra">
@@ -197,6 +270,7 @@
   let usuarios = [];
   let cupons = [];
   let mensagens = [];
+  let site = null;
   let timer = null;
 
   // ---------- utilidades ----------
@@ -267,7 +341,7 @@
 
   async function carregar() {
     try {
-      const [r, u, c, m] = await Promise.all([api('/admin/resumo'), api('/admin/usuarios'), api('/admin/cupons'), api('/admin/mensagens')]);
+      const [r, u, c, m, si] = await Promise.all([api('/admin/resumo'), api('/admin/usuarios'), api('/admin/cupons'), api('/admin/mensagens'), api('/admin/site')]);
       $('cTotal').textContent = r.total;
       $('cAtivos').textContent = r.ativos;
       $('cOnline').textContent = r.online;
@@ -278,6 +352,8 @@
       usuarios = u.usuarios;
       cupons = c.cupons;
       mensagens = m.mensagens;
+      site = si;
+      mostrarSite();
       mostrarContas();
       mostrarCupons();
       mostrarMsgs();
@@ -291,7 +367,7 @@
   document.querySelectorAll('.abas button').forEach(b => {
     b.onclick = () => {
       document.querySelectorAll('.abas button').forEach(x => x.classList.toggle('ativa', x === b));
-      ['abaContas', 'abaCupons', 'abaMsgs'].forEach(id => $(id).hidden = b.dataset.aba !== id);
+      ['abaContas', 'abaCupons', 'abaMsgs', 'abaSite'].forEach(id => $(id).hidden = b.dataset.aba !== id);
     };
   });
 
@@ -432,6 +508,56 @@
       carregar();
     } catch (err) { toast(err.message, true); }
   };
+
+  // ---------- site ----------
+  const NOMES_EV = { visita: 'Entrou no site', download: 'Baixou o app', assinar: 'Clicou em assinar', planos: 'Viu os planos', contato: 'Mandou contato', site_dev: 'Abriu WEISX Desenvolvedores' };
+  function listaBarra(itens) {
+    if (!itens.length) return '<div style="color:var(--fraco);font-size:13px">Sem dados ainda.</div>';
+    const max = Math.max(...itens.map(i => i.n));
+    return itens.map(i => `<div class="lb"><span title="${esc(i.nome)}">${esc(i.nome)}</span><div class="trilho"><i style="width:${Math.round(i.n / max * 100)}%"></i></div><b>${i.n}</b></div>`).join('');
+  }
+  function mostrarSite() {
+    if (!site) return;
+    $('sVisitas').textContent = site.hoje.visitas;
+    $('sUnicos').textContent = site.hoje.unicos;
+    $('sDown').textContent = site.hoje.downloads;
+    $('sAssinar').textContent = site.hoje.assinar;
+    $('sSemana').textContent = `${site.semana.visitas} visitas · ${site.semana.unicos} pessoas · ${site.semana.downloads} downloads`;
+
+    // 7 dias, no horário de Brasília
+    const dias = [];
+    const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' });
+    for (let i = 6; i >= 0; i--) dias.push(fmt.format(new Date(Date.now() - i * 864e5)));
+    const valor = (dia, tipo) => (site.porDia.find(d => d.dia === dia && d.tipo === tipo) || { n: 0 }).n;
+    const max = Math.max(1, ...dias.map(d => valor(d, 'visita') + valor(d, 'download')));
+    $('sBarras').innerHTML = dias.map(d => {
+      const v = valor(d, 'visita'), dl = valor(d, 'download');
+      const [, mes, dia] = d.split('-');
+      return `<div class="dia-col" title="${dia}/${mes}: ${v} visitas, ${dl} downloads">
+        <b>${v}</b>
+        <div class="pilha">
+          <div class="b v" style="height:${v / max * 100}%"></div>
+          ${dl ? `<div class="b d" style="height:${Math.max(4, dl / max * 100)}%"></div>` : ''}
+        </div>
+        <small>${dia}/${mes}</small>
+      </div>`;
+    }).join('');
+
+    $('sOrigens').innerHTML = listaBarra(site.origens);
+    $('sAparelhos').innerHTML = listaBarra(site.aparelhos);
+
+    const f = $('filtroEv').value;
+    const log = site.log.filter(e => f === 'todos' || e.tipo === f);
+    $('listaLog').innerHTML = log.length ? log.map(e => `<tr>
+      <td>${new Date(e.criadoEm).toLocaleString('pt-BR')}</td>
+      <td><span class="ev ${esc(e.tipo)}">${esc(NOMES_EV[e.tipo] || e.tipo)}</span></td>
+      <td>${esc(e.detalhe || '—')}</td>
+      <td>${esc(e.origem || '—')}</td>
+      <td>${esc(e.aparelho || '—')}<small>${esc(e.navegador || '')}</small></td>
+      <td><span class="vid">${esc((e.visitante || '—').slice(0, 8))}</span></td>
+    </tr>`).join('') : '<tr><td colspan="6" class="vazio">Nada registrado ainda. Abre o site em outra aba pra testar.</td></tr>';
+  }
+  $('filtroEv').onchange = mostrarSite;
 
   if (token) abrirPainel();
 </script>
