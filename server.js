@@ -37,6 +37,8 @@ const Usuario = mongoose.model('Usuario', new mongoose.Schema({
   usouTeste:   { type: Boolean, default: false },
   ultimoPlano: { type: String, default: null },
   ultimoPing:  { type: Date, default: null },
+  segundosUso: { type: Number, default: 0 },     // tempo total com o app aberto
+  sessaoInicio:{ type: Date, default: null },    // quando ficou online desta vez
   criadoEm:    { type: Date, default: Date.now },
 }));
 
@@ -89,6 +91,14 @@ function gerarToken(u) {
 
 function estaOnline(u) {
   return !!u.ultimoPing && Date.now() - u.ultimoPing.getTime() < ONLINE_MS;
+}
+
+// Tempo de uso: se ainda estava online, soma o tempo desde o último sinal; se não, começa uma sessão nova
+function marcarUso(u) {
+  const agora = Date.now();
+  if (estaOnline(u)) u.segundosUso = (u.segundosUso || 0) + (agora - u.ultimoPing.getTime()) / 1000;
+  else u.sessaoInicio = new Date(agora);
+  u.ultimoPing = new Date(agora);
 }
 
 function resumo(u) {
@@ -308,7 +318,7 @@ app.post('/cadastro', h(async (req, res) => {
   if (await Usuario.findOne({ email }))   return res.status(409).json({ erro: 'Esse e-mail já tem conta.' });
 
   const u = await Usuario.create({
-    usuario, email, senhaHash: await bcrypt.hash(senha, 10), ultimoPing: new Date(),
+    usuario, email, senhaHash: await bcrypt.hash(senha, 10), ultimoPing: new Date(), sessaoInicio: new Date(),
   });
   res.json({ token: gerarToken(u), conta: resumo(u) });
 }));
@@ -319,21 +329,23 @@ app.post('/login', h(async (req, res) => {
   const u = await Usuario.findOne({ $or: [{ usuario }, { email: usuario }] });
   if (!u || !(await bcrypt.compare(senha, u.senhaHash)))
     return res.status(401).json({ erro: 'Usuário ou senha incorretos.' });
-  u.ultimoPing = new Date();
+  marcarUso(u);
   await u.save();
   res.json({ token: gerarToken(u), conta: resumo(u) });
 }));
 
 // O app chama isso ao abrir e a cada 5 minutos (serve pra saber quem está online)
 app.get('/me', auth, h(async (req, res) => {
-  req.user.ultimoPing = new Date();
+  marcarUso(req.user);
   await req.user.save();
   res.json({ token: gerarToken(req.user), conta: resumo(req.user) });
 }));
 
 // App fechou ou saiu da conta
 app.post('/offline', auth, h(async (req, res) => {
+  if (estaOnline(req.user)) req.user.segundosUso = (req.user.segundosUso || 0) + (Date.now() - req.user.ultimoPing.getTime()) / 1000;
   req.user.ultimoPing = null;
+  req.user.sessaoInicio = null;
   await req.user.save();
   res.json({ ok: true });
 }));
@@ -466,6 +478,8 @@ app.get('/admin/usuarios', admin, h(async (req, res) => {
       online: estaOnline(u),
       ultimoPing: u.ultimoPing,
       criadoEm: u.criadoEm,
+      segundosUso: Math.round((u.segundosUso || 0) + (estaOnline(u) ? (Date.now() - u.ultimoPing.getTime()) / 1000 : 0)),
+      sessaoInicio: estaOnline(u) ? u.sessaoInicio : null,
     })),
   });
 }));
